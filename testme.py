@@ -1,10 +1,14 @@
-
+"""
+Looks like test code for the 4 significant digit code.
+Probably should be replaced by unittest code.
+"""
 
 def sig4(value):
-   disp = str(value)[0:4]
-   disp = "    " + disp
-   disp = disp[-4:]
-   return disp
+    disp = str(value)[0:4]
+    disp = "    " + disp
+    disp = disp[-4:]
+    return disp
+
 
 z = 3.14159
 print(sig4(z))
@@ -29,4 +33,3 @@ print(sig4(z))
 
 z = 314.15
 print(sig4(z))
-

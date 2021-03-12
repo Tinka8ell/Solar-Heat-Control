@@ -33,7 +33,8 @@ class ssd1306():
         self.height = 64
         self.pages = int(self.height / 8)
         self.image = Image.new('1', (self.width, self.height))
-        self.canvas = ImageDraw.Draw(self.image) # this is a "draw" object for preparing display contents
+        # this is a "draw" object for preparing display contents
+        self.canvas = ImageDraw.Draw(self.image)
 
         self._command(
             const.DISPLAYOFF,
@@ -71,8 +72,8 @@ class ssd1306():
         """
 
         for i in range(0, len(data), 31):
-            self.bus.write_i2c_block_data(self.addr, self.data_mode, list(data[i:i+31]))
-
+            self.bus.write_i2c_block_data(
+                self.addr, self.data_mode, list(data[i:i+31]))
 
     def display(self):
         """
@@ -98,10 +99,11 @@ class ssd1306():
                 buf.append(byte)
                 i -= 1
 
-        self._data(buf) # push out the whole lot
+        self._data(buf)  # push out the whole lot
 
     def cls(self):
-        self.canvas.rectangle((0, 0, self.width-1, self.height-1), outline=0, fill=0)
+        self.canvas.rectangle(
+            (0, 0, self.width-1, self.height-1), outline=0, fill=0)
         self.display()
 
     def onoff(self, onoff):
