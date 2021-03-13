@@ -8,19 +8,18 @@ This will enable us to do stuff on a separate thread
 and so protect the main code.
 """
 
+from time import sleep
 
-import time
-
-import SafeOffload
-import UbidotsBackingStore as Ubs
+from SafeOffload import SafeOffload
+from UbidotsBackingStore import UbidotsBackingStore 
 
 
-class SafeInternetOffload(SafeOffload.SafeOffload):
+class SafeInternetOffload(SafeOffload):
 
     # Initialisation code
     def __init__(self):
         # init parent
-        SafeOffload.SafeOffload.__init__(self)
+        super().__init__()
         self.bs = None
 
     def setup(self, data):
@@ -32,7 +31,7 @@ class SafeInternetOffload(SafeOffload.SafeOffload):
         print("Internet init called")
         if not self.bs:
             print("Initialising UBIDOTS")
-            self.bs = Ubs.UbidotsBackingStore()
+            self.bs = UbidotsBackingStore()
 
     def do(self):
         self.bs.recordAll(self.keys, self.values)
@@ -61,7 +60,7 @@ def main():
         print("Oops it didn't work")
         print("Exception was:", obj.getError())
     print("wait 20 secs")
-    time.sleep(20)
+    sleep(20)
     values = {"Power": 0, "Photo": 1.2, "Pump": 0, "Water": 15.0, "Flow": 0}
     bs = obj.getBs()
     obj = SafeInternetOffload()

@@ -8,21 +8,18 @@ This will enable us to do stuff on a separate thread
 and so protect the main code.
 """
 
-import SafeOffload
-import Screen
+from SafeOffload import SafeOffload
+from Screen import Screen
 
 
-class SafeScreen(SafeOffload.SafeOffload):
-
-    # Initialisation code
-    def __init__(self):
-        # init parent
-        SafeOffload.SafeOffload.__init__(self)
+class SafeScreen(SafeOffload):
 
     def init(self):
-        self.scr = Screen.Screen()
+        print("SafeScreen: init")
+        self.scr = Screen()
 
     def do(self):
+        print("SafeScreen: do")
         self.scr.set(self.data)
 
 

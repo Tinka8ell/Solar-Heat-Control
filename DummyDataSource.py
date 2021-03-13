@@ -10,16 +10,16 @@ import math
 import random
 import time
 
-import DataSource as Ds
+from DataSource import DataSource
 
 
-class DummyDataSource (Ds.DataSource):
+class DummyDataSource (DataSource):
     'This will be the DataSource class for the Solar panel package'
     # class variables here
 
     # Initialisation code
     def __init__(self, name):
-        Ds.DataSource.__init__(self, name)
+        super().__init__(name)
         self.max = 10
         self.min = 0
 

@@ -8,21 +8,21 @@ and so protect the main code.
 """
 
 
-import threading
+from threading import Thread
 
 
-class SafeOffload(threading.Thread):
+class SafeOffload(Thread):
 
     # Initialisation code
     def __init__(self):
         # init parent
-        threading.Thread.__init__(self)
+        super().__init__()
         self.ok = True  # used to be sure we worked, so we can recycle ...
         self.object = None
         self.error = None
 
     def setup(self, data):
-        self.data = data  # what we neeed to work with
+        self.data = data  # what we need to work with
 
     def init(self):
         if not self.object:  # not being reused

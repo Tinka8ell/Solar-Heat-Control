@@ -6,46 +6,49 @@ Backing store using ubidots so it can be monitored and controlled
 remotely and also generate nice graphs and stuff.
 """
 
-import datetime
-import time
+from datetime import datetime
 
-import BackingStore as Bs
 from ubidots import ApiClient
 
+from BackingStore import BackingStore 
 
-class UbidotsBackingStore(Bs.BackingStore):
+
+class UbidotsBackingStore(BackingStore):
     'This will be the Ubidots backing store class for the Solar panel package'
 
     # Initialisation code
     def __init__(self):
-        Bs.BackingStore.__init__(self)
-        current = datetime.datetime.now()
-        # Create an ApiClient object
-        self.api = ApiClient(token='yJuJvi27c0CHde9kGf7VZ6CSGCTTZZ')
+        super().__init__()
+        current = datetime.now()
+        # Create an ApiClient object from:
+        t_token = 'BBFF-brMbdfkdsa6akjqZTt9i0ac2Y6t0ij'
+        # Create variables from:
+        t_Power = '604ca1a21d84724797c1d2fb'
+        t_PumpP = '604ca1cf1d84724a91aaeebd'
+        t_Photo = '604ca1d41d84724a91aaeebe'
+        t_Threshold = '604ca1e31d847249e88dd63a'
+        t_Off = '604ca1ed1d84724b1bb01b62'
+        t_Pump = '604ca1f41d84724a91aaeebf'
+        t_Pool = '604ca1fb1d847249b617a2c9'
+        t_Water = '604ca20f1d84724baba55185'
+        t_Flow = '604ca20f1d84724baccb59f3'
+        t_Depth = '604ca2171d84724c90bef688'
+        t_Period = '604ca21e1d84724ba94f925f'
 
-        # Get all the Ubidots Variables:
-        # John's power meter - variable5 = api.get_variable('58ccef12762542259a52564a')
-        Power = self.api.get_variable('58ccef12762542259a52564a')
-        # John's power meter - variable5 = api.get_variable('58ccef12762542259a52564a')
-        PumpP = self.api.get_variable('58f77f7576254205ccf1809b')
-        # John's photoresistor value - variable = api.get_variable('58cab87676254236fd1da01c')
-        Photo = self.api.get_variable('58cab87676254236fd1da01c')
-        # John's threshold on value - variable2 = api.get_variable("58cac4ad76254236fbe2541d")
-        Threshold = self.api.get_variable("58cac4ad76254236fbe2541d")
-        # John's threshold off value - variable2 = api.get_variable("58f910d176254238876c5670")
-        Off = self.api.get_variable("58f910d176254238876c5670")
-        # John's switch pump on / off - variable3 = api.get_variable("58cac36f76254236fd1e14c3")
-        Pump = self.api.get_variable("58cac36f76254236fd1e14c3")
-        # John's pool water temperature reading = variable = api.get_variable('58cb232676254236faacf06c')
-        Pool = self.api.get_variable('58f777f276254205cdce8c15')
-        # John's water temperature reading = variable = api.get_variable('58cb232676254236faacf06c')
-        Water = self.api.get_variable('58cb232676254236faacf06c')
-        # John's water flow rate meter = variable = api.get_variable('58cf0bee762542735c52735b')
-        Flow = self.api.get_variable('58cf0bee762542735c52735b')
-        # John's water depth meter = variable = api.get_variable('59174d0e76254269c376b728')
-        Depth = self.api.get_variable('59174d0e76254269c376b728')
-        # My sample period currently in seconds
-        Period = self.api.get_variable('58d2591676254255c7015aaf')
+        self.api = ApiClient(token=t_token)
+
+        Power = self.api.get_variable(t_Power)
+        PumpP = self.api.get_variable(t_PumpP)
+        Photo = self.api.get_variable(t_Photo)
+        Threshold = self.api.get_variable(t_Threshold)
+        Off = self.api.get_variable(t_Off)
+        Pump = self.api.get_variable(t_Pump)
+        Pool = self.api.get_variable(t_Pool)
+        Water = self.api.get_variable(t_Water)
+        Flow = self.api.get_variable(t_Flow)
+        Depth = self.api.get_variable(t_Depth)
+        Period = self.api.get_variable(t_Period)
+        
         self.vars = {"Power": Power,
                      "PumpP": PumpP,
                      "Photo": Photo,
@@ -57,7 +60,7 @@ class UbidotsBackingStore(Bs.BackingStore):
                      "Flow": Flow,
                      "Depth": Depth,
                      "Period": Period}
-        setupTime = datetime.datetime.now() - current
+        setupTime = datetime.now() - current
         print("Ubidots set up took: " + str(setupTime))
 
     # get a named control value
@@ -71,17 +74,17 @@ class UbidotsBackingStore(Bs.BackingStore):
                 values = var.get_values(1)
                 strValue = str(values[0]['value'])
                 value = float(strValue)
-            except ConnectionError as Argument:
-                print("Connection error:", Argument)
+            except ConnectionError as exc:
+                print("Connection error:", exc)
                 print("Skipping read from ubidots at",
-                      datetime.datetime.now().isoformat(' '))
+                      datetime.now().isoformat(' '))
                 print("Failed to read: Key:", name)
                 # don't recover if error
                 raise
-            except Exception as Argument:
-                print("Big error:", Argument)
+            except Exception as exc:
+                print("Big error:", exc)
                 print("Skipping read from ubidots at",
-                      datetime.datetime.now().isoformat(' '))
+                      datetime.now().isoformat(' '))
                 print("Failed to read: Key:", name)
                 # don't recover if error
                 raise
@@ -91,24 +94,23 @@ class UbidotsBackingStore(Bs.BackingStore):
 
     # get all named control values
     def getProperties(self):
+        current = datetime.now()
         # control values are:
-        current = datetime.datetime.now()
         keys = ["Period", "Threshold", "Off"]
         values = {}
         for key in keys:
             values[key] = self.getProperty(key)
-        getTime = datetime.datetime.now() - current
+        getTime = datetime.now() - current
         print("Ubidots get properies took: " + str(getTime))
         print("returned: " + str(values))
         return values
 
     # record all the values using the given keys
     def recordAll(self, keys, values):
-        # this assumes that the keys are always in the same order!
-        current = datetime.datetime.now()
+        current = datetime.now()
         for key in keys:
             self.recordIt(key, values.get(key, None))
-        setTime = datetime.datetime.now() - current
+        setTime = datetime.now() - current
         print("Ubidots set properies took: " + str(setTime))
 
     # record a value using the given key
@@ -118,16 +120,16 @@ class UbidotsBackingStore(Bs.BackingStore):
         else:
             try:
                 response = self.vars[key].save_value({"value": value})
-            except ConnectionError as Argument:
-                print("Connection error:", Argument)
+            except ConnectionError as exc:
+                print("Connection error:", exc)
                 print("Skipping write to ubidots at",
-                      datetime.datetime.now().isoformat(' '))
+                      datetime.now().isoformat(' '))
                 print("Failed to write: Key:", key, "=", value)
                 raise
-            except Exception as Argument:
-                print("Big error:", Argument)
+            except Exception as exc:
+                print("Big error:", exc)
                 print("Skipping write to ubidots at",
-                      datetime.datetime.now().isoformat(' '))
+                      datetime.now().isoformat(' '))
                 print("Failed to write: Key:", key, "=", value)
                 raise
         # print("Key:", key, "=", value)

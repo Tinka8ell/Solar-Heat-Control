@@ -8,19 +8,16 @@ This will enable us to do stuff on a separate thread
 and so protect the main code.
 """
 
-import time
-
-import FileBackingStore as Fbs
-import SafeOffload
-import UbidotsBackingStore as Ubs
+from SafeOffload import SafeOffload
+from UbidotsBackingStore import UbidotsBackingStore 
 
 
-class SafeInternetDownload(SafeOffload.SafeOffload):
+class SafeInternetDownload(SafeOffload):
 
     # Initialisation code
     def __init__(self):
         # init parent
-        SafeOffload.SafeOffload.__init__(self)
+        super().__init__()
         self.bs = None
         self.fbs = None
 
@@ -32,7 +29,7 @@ class SafeInternetDownload(SafeOffload.SafeOffload):
         # print("Internet init called")
         if not self.bs:
             # print("Initialising UBIDOTS")
-            self.bs = Ubs.UbidotsBackingStore()
+            self.bs = UbidotsBackingStore()
 
     def do(self):
         properties = self.bs.getProperties()

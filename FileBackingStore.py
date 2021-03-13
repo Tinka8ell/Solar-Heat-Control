@@ -11,15 +11,15 @@ import datetime
 import os.path
 import time
 
-import BackingStore as Bs
+from BackingStore import BackingStore 
 
 
-class FileBackingStore(Bs.BackingStore):
+class FileBackingStore(BackingStore):
     'This will be the file backing store class for the Solar panel package'
 
     # Initialisation code
     def __init__(self):
-        Bs.BackingStore.__init__(self)
+        super().__init__()
         self.dir = None
         self.control = None
         # print("Created file backing store")

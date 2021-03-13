@@ -13,19 +13,20 @@ import os
 import sys
 import time
 
-# for reading the analog input channels
+# for reading the analogue input channels
 # Import SPI library (for hardware SPI)
 import Adafruit_GPIO.SPI as SPI
 # MCP3008 library and math for calculations
 # for reading the thermometer
 import Adafruit_MCP3008 as MCP
-import DataSource as Ds
+from DataSource import DataSource
 # for setting the pump value and reading the flow
 # http://raspberrypi.stackexchange.com/questions/34480/how-to-use-the-water-flow-sensor-with-raspberry
 import RPi.GPIO as GPIO
+from builtins import super
 
 
-class RealDataSource (Ds.DataSource):
+class RealDataSource (DataSource):
     '''
 Generate values based on given names:
    Power = John's power meter - reading the MCP3008 analog input channels
@@ -60,7 +61,7 @@ Seem to be using the following GPIO ports:
         self.ECHO = 19
         self.FLOW_SENSOR = 27
 
-        Ds.DataSource.__init__(self, name)
+        super().__init__(name)
         if (name == "Power") or (name == "PumpP") or (name == "Photo"):
             # Software SPI configuration:
             self.mcp = MCP.MCP3008(
