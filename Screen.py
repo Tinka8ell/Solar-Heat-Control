@@ -39,6 +39,7 @@ class Screen ():
         self.draw = self.oled.canvas
         self.oled.display()
         self.lines = BLANK_LINES
+        print("Screen: created")
 
     def clear(self):
         # clear display and any text from before

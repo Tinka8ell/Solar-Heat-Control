@@ -77,14 +77,14 @@ class FileBackingStore(BackingStore):
                 value = float(value)
             properties[key] = value
             i += 1
-        print("getProperties() returned:", properties)
+        print("FileBackingStore.getProperties() returned:", properties)
         return properties
 
     def setProperties(self, properties):
         path = self.getControl()
         fd = open(path, "w")
         line = "'Period', 'Threshold', 'Off'"
-        print("writing:", line)
+        print("FileBackingStore.setProperties writing:", line)
         fd.write(line + "\n")
         line = str(properties.get("Period")) + ", " + \
             str(properties.get("Threshold")) + ", " + \

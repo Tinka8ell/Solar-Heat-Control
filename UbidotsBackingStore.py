@@ -12,54 +12,35 @@ from ubidots import ApiClient
 
 from BackingStore import BackingStore 
 
-
 class UbidotsBackingStore(BackingStore):
     'This will be the Ubidots backing store class for the Solar panel package'
+
+    TOKENS = None # local 'class' copy of token data
 
     # Initialisation code
     def __init__(self):
         super().__init__()
         current = datetime.now()
-        # Create an ApiClient object from:
-        t_token = 'BBFF-brMbdfkdsa6akjqZTt9i0ac2Y6t0ij'
-        # Create variables from:
-        t_Power = '604ca1a21d84724797c1d2fb'
-        t_PumpP = '604ca1cf1d84724a91aaeebd'
-        t_Photo = '604ca1d41d84724a91aaeebe'
-        t_Threshold = '604ca1e31d847249e88dd63a'
-        t_Off = '604ca1ed1d84724b1bb01b62'
-        t_Pump = '604ca1f41d84724a91aaeebf'
-        t_Pool = '604ca1fb1d847249b617a2c9'
-        t_Water = '604ca20f1d84724baba55185'
-        t_Flow = '604ca20f1d84724baccb59f3'
-        t_Depth = '604ca2171d84724c90bef688'
-        t_Period = '604ca21e1d84724ba94f925f'
-
-        self.api = ApiClient(token=t_token)
-
-        Power = self.api.get_variable(t_Power)
-        PumpP = self.api.get_variable(t_PumpP)
-        Photo = self.api.get_variable(t_Photo)
-        Threshold = self.api.get_variable(t_Threshold)
-        Off = self.api.get_variable(t_Off)
-        Pump = self.api.get_variable(t_Pump)
-        Pool = self.api.get_variable(t_Pool)
-        Water = self.api.get_variable(t_Water)
-        Flow = self.api.get_variable(t_Flow)
-        Depth = self.api.get_variable(t_Depth)
-        Period = self.api.get_variable(t_Period)
-        
-        self.vars = {"Power": Power,
-                     "PumpP": PumpP,
-                     "Photo": Photo,
-                     "Threshold": Threshold,
-                     "Off": Off,
-                     "Pump": Pump,
-                     "Pool": Pool,
-                     "Water": Water,
-                     "Flow": Flow,
-                     "Depth": Depth,
-                     "Period": Period}
+        if self.TOKENS is None:
+            print("Reading tokens")
+            # one time read of tokens
+            self.TOKENS = {}
+            with open('ubidots.txt') as f:
+                line = f.readline()
+                while len(line) > 0:
+                    if line.endswith('\n'):
+                        line = line[:-1].strip() # remove it
+                        # print("Removing trailing nl from:", line)
+                    key, value = line.split(" = ")
+                    self.TOKENS[key] = value
+                    line = f.readline()
+            # print("Tokens are:", self.TOKENS)
+        self.api = ApiClient(token=self.TOKENS['token'])
+        self.vars = {}
+        for key in self.TOKENS.keys():
+            if key != 'token':
+                var = self.api.get_variable(self.TOKENS[key])
+                self.vars[key] = var
         setupTime = datetime.now() - current
         print("Ubidots set up took: " + str(setupTime))
 

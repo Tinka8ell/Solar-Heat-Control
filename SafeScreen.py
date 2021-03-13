@@ -17,6 +17,7 @@ class SafeScreen(SafeOffload):
     def init(self):
         print("SafeScreen: init")
         self.scr = Screen()
+        print("SafeScreen: completed")
 
     def do(self):
         print("SafeScreen: do")

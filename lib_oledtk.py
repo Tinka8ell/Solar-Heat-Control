@@ -39,11 +39,14 @@ class oled():
         """
         print("oled: display")
         self.picture = ImageTk.BitmapImage(image=self.image)
+        print("oled: done picture")
         self.place.create_image(
                 (self.width / 2 + 1, 
                  self.height / 2 + 1), 
                 image=self.picture)
+        print("oled: done create image")
         self.window.update_idletasks()
+        print("oled: done idle")
         return 
 
     def cls(self):

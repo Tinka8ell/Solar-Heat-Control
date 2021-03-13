@@ -76,11 +76,11 @@ class Controller (Frame):
         self.ds = {}
         for i in range(len(self.keys)):
             key = self.keys[i]
-            print("Creating ds for", key)
+            # print("Creating ds for", key)
             ds = DataSource(key)
             if not REAL:
                 # for testing have to define ranges
-                print("Setting range for", key)
+                # print("Setting range for", key)
                 ds.setRange(RANGES[i][0], RANGES[i][1])
             self.ds[key] = ds
 
@@ -337,7 +337,7 @@ class Controller (Frame):
                 # scr.getError() will get the exception it failed with
                 error = scr.getError()
                 print("scr has failed:", error)
-                self.ScreenRetry = 10
+                self.ScreenRetry = 2 # so fail more ofte than: 10
 
     def guiShow(self, text):
         # strip off first line as already on screen
