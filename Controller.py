@@ -10,17 +10,16 @@ and setting the global constant REAL to False.
 from datetime import datetime, timedelta
 from platform import machine
 from time import strftime
-
-from FileBackingStore import FileBackingStore 
-from SafeInternetDownload import SafeInternetDownload
-from SafeInternetOffload import SafeInternetOffload
-from SafeScreen import SafeScreen
-from tkinter import Tk, Frame, LabelFrame, Label, Text, Button, Scrollbar
+from tkinter import Frame, LabelFrame, Label, Text, Button, Scrollbar
+from tkinter import IntVar, StringVar
 from tkinter import LEFT, RIGHT, TOP, BOTTOM, BOTH, NONE
+from tkinter import N, E, W, S, NORMAL, DISABLED
+from tkinter import Tk, Toplevel
 from tkinter import X, Y, END, VERTICAL, HORIZONTAL
 
-from tkinter import N, E, W, S, NORMAL, DISABLED
-from tkinter import IntVar, StringVar
+from FileBackingStore import FileBackingStore 
+from Screen import Screen
+from UbidotsBackingStore import UbidotsBackingStore 
 
 
 MACHINE = machine()
@@ -58,9 +57,11 @@ class Controller (Frame):
         self.ScreenRetry = 0
 
         # init data
-        self.bs = FileBackingStore()
-        self.ubs = None  # created and maintained as we need it
-
+        self._fbs = FileBackingStore()
+        print("Solar data directory can be found at", self._fbs.getDir())
+        self._ubs = UbidotsBackingStore(timeout=1, 
+                                        control=CONTROLS,
+                                        logErrors = True)
         self.controls = CONTROLS
         self.properties = {}
         self.nextPing = datetime.now()
@@ -162,11 +163,24 @@ class Controller (Frame):
         logframe.grid_columnconfigure(0, weight=1) # make text strechy
 
         frame.grid_columnconfigure(1, weight=1) # make right strechy
+        
+        # create screen object
+        if REAL:
+            self.screen = Screen()
+        else:
+            toplevel = Toplevel(master)
+            frame = Frame(toplevel)
+            frame.grid(row=0, column=0, sticky=(E, W, N, S))
+            label = Label(frame)
+            label.grid(row=0, column=0, sticky=(E, W, N, S))
+            self.screen = Screen(label)
+            
         # init values
         self.getInfo()
         self.doStuff()
         # wake us up!
         self.tick()
+        return
 
     def tick(self):
         # get the current local time from the PC
@@ -181,6 +195,7 @@ class Controller (Frame):
         # to update the time display as needed
         # could use >200 ms, but display gets jerky
         self.after(200, self.tick)
+        return
 
     def ping(self):
         current = datetime.now()
@@ -193,7 +208,7 @@ class Controller (Frame):
             self.nextTime = self.nextPing.strftime('%H:%M:%S')
             self.nextString.set(self.nextTime)
             # print("Times:", self.nextTime, self.nextPing, self.currentTime)
-            print("Ping time:", self.currentTime)
+            # print("Ping time:", self.currentTime)
             # time to do stuff, including check our ping period
             self.getInfo()
             if period != self.getPeriod():
@@ -201,6 +216,7 @@ class Controller (Frame):
                 self.log("Period changed from " + str(period) +
                          " to " + str(self.getPeriod()))
             self.doStuff()
+        return
 
     def getIntProp(self, name):
         value = self.properties.get(name, 0)
@@ -257,6 +273,7 @@ class Controller (Frame):
         text = self.formatValues()
         self.showValues(text)
         self.guiShow(text)
+        return
 
     def readValues(self):
         # ask each its current value
@@ -269,38 +286,13 @@ class Controller (Frame):
 
     def recordValues(self):
         # record to current data store ...
-        self.bs.recordAll(self.keys, self.values)
+        self._fbs.recordAll(self.values)
         # now off load to UBIDOTS ...
-        offload = SafeInternetOffload()
-        offload.setup([self.ubs, self.keys, self.values])
-        offload.start()
-        offload.join(TIMEOUT)
-        if offload.is_alive():
-            self.ubs = None  # something went wrong, so reload next time
-            self.log("Offload to UBIDOTS taking too long > " + str(TIMEOUT))
-        else:
-            if offload.isOk():
-                self.ubs = offload.getBs()  # re-use it if ok
-            else:
-                self.ubs = None  # something went wrong, so reload next time
-                self.log("Offload to UBIDOTS failed: " +
-                         str(offload.getError()))
+        # this could fail, but shouldn't kill us!
+        self._ubs.recordAll(self.values)
         # now to import the control data if we can!
-        download = SafeInternetDownload()
-        download.setup([self.ubs, self.bs])
-        download.start()
-        download.join(TIMEOUT)
-        if download.is_alive():
-            self.ubs = None  # something went wrong, so reload next time
-            self.log("Download from UBIDOTS taking too long > " + str(TIMEOUT))
-        else:
-            if download.isOk():
-                self.ubs = download.getBs()  # re-use it if ok
-            else:
-                self.ubs = None  # something went wrong, so reload next time
-                self.log("Download from UBIDOTS failed: " +
-                         str(download.getError()))
         self.getInfo()
+        return
 
     def formatPump(self):
         text = "On "
@@ -322,52 +314,49 @@ class Controller (Frame):
         return text
 
     def showValues(self, text):
-        print("showValues:", self.ScreenRetry)
-        print(text)
         # record to screen ...
-        if self.ScreenRetry > 0:
-            self.ScreenRetry -= 1
-        else:
-            scr = SafeScreen()
-            scr.setup(text)
-            scr.start()
-            scr.join()
-            if scr.hasFailed():
-                # handle what to do if does not work here
-                # scr.getError() will get the exception it failed with
-                error = scr.getError()
-                print("scr has failed:", error)
-                self.ScreenRetry = 2 # so fail more ofte than: 10
+        self.screen.set(text)
+        return
 
     def guiShow(self, text):
         # strip off first line as already on screen
         # and join rest with newlines
-        text = chr(10).join(text[1:])
+        text = "\n".join(text[1:])
         self.info.config(state=NORMAL)
         self.info.delete("1.0", END)
         self.info.insert(END, text)
         self.info.config(state=DISABLED)
+        return
 
     def terminate(self):
         # put code here for "Are you sure?"
         self.master.destroy()
         if self.master.master:
             self.master.master.destroy()
+        return
 
     def log(self, message):
         # add to first line
         text = self.clockString.get() + ": " + message
-        print(text)
+        print(text) # ?
         self.logger.config(state=NORMAL)
         # if removing scrolled off line: self.logger.delete("30.0", END)
         self.logger.insert("1.0", text + chr(10))
         self.logger.config(state=DISABLED)
+        return
 
     def getInfo(self):
-        # read in the control info
-        props = self.bs.getProperties()
-        # print("Got props:", props, self.properties)
-        self.properties = props
+        # read in the control info from ubidots
+        # this could fail, but not stop us
+        properties = self._ubs.getProperties()
+        if properties is not None:
+            # keep back up of values in case fails later
+            self._fbs.setProperties(properties)
+        else:
+            # if failed, get from backing store
+            properties = self._fbs.getProperties()
+        self.properties = properties
+        return
 
     def pumpRunning(self):
         # true if Flow greater than 2
@@ -381,12 +370,12 @@ class Controller (Frame):
                 # switched on
                 self.startedPump = current
                 self.log("Pump has turned on at " + str(current))
-                print("Pump has turned on at " + str(current))
+                # print("Pump has turned on at " + str(current))
             else:
                 # switched off
                 self.stoppedPump = current
                 self.log("Pump has turned off at " + str(current))
-                print("Pump has turned off at " + str(current))
+                # print("Pump has turned off at " + str(current))
         self.wasRunning = running  # remember for next time
         return running
 
@@ -417,10 +406,10 @@ class Controller (Frame):
                              + str(self.values["Water"]) 
                              + " is less than the pool " 
                              + str(self.values["Pool"]))
-                    print("Turning pump off as water now " 
-                          + str(self.values["Water"]) 
-                          + " is less than the pool " 
-                          + str(self.values["Pool"]))
+                    # print("Turning pump off as water now " 
+                    #       + str(self.values["Water"]) 
+                    #       + " is less than the pool " 
+                    #       + str(self.values["Pool"]))
         else:
             if current - self.stoppedPump > DELAY_BEFORE_TESTING:
                 if self.values["Photo"] > self.getOn():  # above on
@@ -429,10 +418,11 @@ class Controller (Frame):
                              + str(self.values["Photo"]) 
                              + " and threshold is " 
                              + str(self.getOn()))
-                    print("Turning pump on as photo now " 
-                          + str(self.values["Photo"]) 
-                          + " and threshold is " 
-                          + str(self.getOn()))
+#                     print("Turning pump on as photo now " 
+#                           + str(self.values["Photo"]) 
+#                           + " and threshold is " 
+#                           + str(self.getOn()))
+        return
 
     def main(root):
         # Start up code called by calling Controller.main()
@@ -452,13 +442,8 @@ def sig4(value):
     return disp
 
 
-def main():
-    # this is for testing
+# execute only if run as a script
+if __name__ == "__main__":
     root = Tk()
     Controller.main(root)
     root.mainloop()
-
-
-# execute only if run as a script
-if __name__ == "__main__":
-    main()  # execute test code ...

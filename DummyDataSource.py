@@ -32,16 +32,22 @@ class DummyDataSource (DataSource):
 
     def setValue(self, value):
         self.value = value
+#         if self.getName() == "Pump":
+#             print("DummyDataSource.setValue for Pump to", 
+#                   self.value, int(self.value))
         # print("Setting", self.getName(), "to", self.value)
         # these of for the dummy data generator
         self.dummy = datetime.datetime.now()
         self.offset = random.randint(0, 360)  # randomise start of cycle
-        self.period = random.randint(180, 540)  # randomise length of cycle
+        self.period = random.randint(18, 54)  # length of cycle 30 - 90 mins
 
     def getName(self):
         return self.key
 
     def getValue(self):
+#         if self.getName() == "Pump":
+#             print("DummyDataSource.getValue for Pump =", 
+#                   self.value, int(self.value))
         if self.getName() != "Pump":
             # add a dummy cycle value for testing
             diff = datetime.datetime.now() - self.dummy   # time since created

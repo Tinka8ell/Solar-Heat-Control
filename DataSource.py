@@ -29,16 +29,3 @@ class DataSource ():
         return int(self.value)
 
 
-def main():
-    # this is for testing
-    ds = DataSource("Dummy")
-    print("New datasource:", ds.getName())
-    print("Current value:", ds.getValue())
-    for i in range(10):
-        time.sleep(5)
-        print("After 5 secs value:", ds.getValue())
-
-
-# execute only if run as a script
-if __name__ == "__main__":
-    main()  # execute test code ...

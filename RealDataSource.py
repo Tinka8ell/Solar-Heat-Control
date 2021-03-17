@@ -5,25 +5,35 @@ This will be the RealDataSource class for the Solar panel package
 It accesses the various hardware to 'see' the world.
 """
 
+from builtins import super
 import datetime
 import glob
-# NB need to calibrate
 import math
 import os
+from platform import machine
 import sys
 import time
 
-# for reading the analogue input channels
-# Import SPI library (for hardware SPI)
-import Adafruit_GPIO.SPI as SPI
-# MCP3008 library and math for calculations
-# for reading the thermometer
-import Adafruit_MCP3008 as MCP
 from DataSource import DataSource
-# for setting the pump value and reading the flow
-# http://raspberrypi.stackexchange.com/questions/34480/how-to-use-the-water-flow-sensor-with-raspberry
-import RPi.GPIO as GPIO
-from builtins import super
+
+
+# NB need to calibrate
+MACHINE = machine()
+# To enable debugging on non-pi environment set REAL to False.
+REAL = True
+if MACHINE == "AMD64":
+    REAL = False # on Windows can't be real!
+
+if REAL:
+    # for reading the analogue input channels
+    # Import SPI library (for hardware SPI)
+    import Adafruit_GPIO.SPI as SPI
+    # MCP3008 library and math for calculations
+    # for reading the thermometer
+    import Adafruit_MCP3008 as MCP
+    # for setting the pump value and reading the flow
+    # http://raspberrypi.stackexchange.com/questions/34480/how-to-use-the-water-flow-sensor-with-raspberry
+    import RPi.GPIO as GPIO
 
 
 class RealDataSource (DataSource):

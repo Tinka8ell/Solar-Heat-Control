@@ -10,26 +10,37 @@ class BackingStore():
 
     # Initialisation code
     def __init__(self):
-        self.testData = {"period": 60}
+        self.testData = {"Period": 60}
+        self.logData = []
 
     # get a named control value
     def getProperty(self, name):
         # for now only support period => 1 minute
-        return self.testData.get("period", 60)
+        return self.testData.get(name)
 
     # get all named control values
     def getProperties(self):
         return self.testData
 
+    # set all named control values
+    def setProperties(self, properties):
+        self.testData = properties
+        return 
+
     # record all the values using the given keys
-    def recordAll(self, keys, values):
+    def recordAll(self, values):
         # this assumes that the keys are always in the same order!
-        for key in keys:
-            self.recordIt(key, values.get(key, "none"))
+        for key in values.keys():
+            self.recordIt(key, values[key])
 
     # record a value using the given key
     def recordIt(self, key, value):
-        print("Key:", key, "=", value)
+        self.logData.append((key, value))
+        return
+    
+    def dumpRecords(self):
+        # just for testing
+        return self.logData
 
 
 def main():

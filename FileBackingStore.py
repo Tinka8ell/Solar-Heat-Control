@@ -8,136 +8,93 @@ in case (as often was) the Internet connection had failed.
 """
 
 import datetime
+import json
+import os
 import os.path
 import time
 
-from BackingStore import BackingStore 
-
-
-class FileBackingStore(BackingStore):
+class FileBackingStore():
     'This will be the file backing store class for the Solar panel package'
 
     # Initialisation code
     def __init__(self):
-        super().__init__()
-        self.dir = None
-        self.control = None
-        # print("Created file backing store")
+        self._dir = None
+        self._control = None
+        return
 
     def getDir(self):
-        if not self.dir:
+        if not self._dir:
             path = "/temp/Solar"
             if not os.path.exists(path):
                 os.makedirs(path)
-            self.dir = path
-            print("Solar directory can be found at", self.dir)
-        return self.dir
+            self._dir = path
+        return self._dir
 
     def getControl(self):
-        if not self.control:
-            path = os.path.join(self.getDir(), "Control.csv")
+        if not self._control:
+            path = os.path.join(self.getDir(), "Control.json")
             if not os.path.isfile(path):
                 fd = open(path, "w")
-                fd.write("'Period', 'Threshold'\n")
-                fd.write("60, 3\n")
+                json.dump({'Period': 60, 'Threshold': 3}, fd)
                 fd.close
-            self.control = path
-        return self.control
+            self._control = path
+        return self._control
 
-    def getCsv(self, fileName, keys):
+    def getLog(self):
+        current = datetime.datetime.now()
+        today = current.date().isoformat()
+        fileName = "Record-" + today + ".json"  # unique file for each day
         path = os.path.join(self.getDir(), fileName)
         if not os.path.isfile(path):
             # not exist, so create it
             fd = open(path, "w")
-            # now it exists, we need to head the headings ...
-            heading = "'Timestamp'"
-            sep = ", "
-            for key in keys:
-                heading += sep + "'" + key + "'"
-            fd.write(heading + "\n")
+            fd.write('{"records": [') # start json with a dummy structure 
+            # add timestamp of the file create
+            data = {"timestamp": current.strftime("%d/%m/%y %H:%M:%S")}
+            json.dump(data, fd)
             fd.close
-            print("Started new file at", path)
         return path
 
     def getProperties(self):
         properties = {}
         path = self.getControl()
-        fd = open(path)
-        line = fd.readline()
-        keys = line.split(",")
-        line = fd.readline()
-        values = line.split(",")
-        i = 0
-        for key in keys:
-            key = key.strip().strip("'")
-            value = values[i].strip()
-            if value == 'None':
-                value = None
-            else:
-                value = float(value)
-            properties[key] = value
-            i += 1
-        print("FileBackingStore.getProperties() returned:", properties)
+        with open(path) as f:
+            properties = json.load(f)
         return properties
 
     def setProperties(self, properties):
         path = self.getControl()
-        fd = open(path, "w")
-        line = "'Period', 'Threshold', 'Off'"
-        print("FileBackingStore.setProperties writing:", line)
-        fd.write(line + "\n")
-        line = str(properties.get("Period")) + ", " + \
-            str(properties.get("Threshold")) + ", " + \
-            str(properties.get("Off"))
-        print("writing:", line)
-        fd.write(line + "\n")
-        fd.close
+        with open(path, "w") as f:
+            json.dump(properties, f)
+        return
 
     def recordIt(self, key, value):
-        # this assumes that the key is always first item!
-        keys = [key]
         values = {key: value}
-        self.recordAll(keys, values)
+        self.recordAll(values)
+        return
 
-    def recordAll(self, keys, values):
-        # this assumes that the keys are always in the same order!
+    def recordAll(self, values):
+        path = self.getLog()
         current = datetime.datetime.now()
-        today = current.date().isoformat()
-        fileName = "Record-" + today + ".csv"  # unique file for each day
-        csv = self.getCsv(fileName, keys)
-        line = current.strftime("%d/%m/%y %H:%M:%S")  # current time stamp
-        for key in keys:
-            line += ", " + str(values.get(key))
-        fd = open(csv, "a")
-        fd.write(line + "\n")
-        fd.close()
+        data = {"timestamp": current.strftime("%d/%m/%y %H:%M:%S")}
+        data.update(values)
+        with open(path, "a") as f:
+            f.write(", ") # add next record to the json list
+            json.dump(data, f)
+        return
 
-    # get a named control value
     def getProperty(self, name):
         values = self.getProperties()
         return values.get(name)
 
+    def dumpRecords(self):
+        # just for testing
+        path = self.getLog()
+        all = ""
+        with open(path) as f:
+            all = f.readlines()
+        all.append("]}") # complete json structure!
+        str = "".join(all)
+        properties = json.loads(str)
+        return properties["records"]
 
-def main():
-    # This is just for testing
-    bs = FileBackingStore()
-    print("getProperties() returned")
-    print(bs.getProperties())
-    print("period =", bs.getProperty("Period"))
-    print("threshold =", bs.getProperty("Threshold"))
-    print("off =", bs.getProperty("Off"))
-
-    keys = ["Power", "Photo", "Pump", "Water", "Flow"]
-    print("Full write")
-    bs.recordAll(keys, {"Power": 123.45, "Photo": 3.7,
-                        "Pump": 1, "Water": 22.0, "Flow": 17.5})
-    print("Wait a bit")
-    time.sleep(3)
-    print("Reset write")
-    bs.recordAll(keys, {"Power": 0, "Photo": 1.2,
-                        "Pump": 0, "Water": 15.0, "Flow": 0})
-    print("Done")
-
-
-if __name__ == '__main__':
-    main()
