@@ -16,7 +16,7 @@ import time
 
 from DataSource import DataSource
 
-
+PHOTO_MULTIPLIER = 1
 # NB need to calibrate
 MACHINE = machine()
 # To enable debugging on non-pi environment set REAL to False.
@@ -178,7 +178,7 @@ Seem to be using the following GPIO ports:
             # print("photoresistor value = ", value)
             # convert from scale of 1024 to 0
             # into scale of 0 to 20
-            self.value = 20 * (1024 - value) / 1024
+            self.value = PHOTO_MULTIPLIER * 20 * (1024 - value) / 1024
             # print("converted to value = ", self.value)
         elif (self.getName() == "Water") or (self.getName() == "Pool"):
             # Convert the value of the sensor into a temperature
@@ -250,6 +250,7 @@ Seem to be using the following GPIO ports:
                     avedistance = self.ERROR_VALUE
                     # this is very bad news!
                     print("zero readings. valid = ", valid)
+                    break # exit loop!
             self.value = avedistance
         else:
             print("Getting", self.getName(), "as", self.value)
@@ -260,9 +261,10 @@ Seem to be using the following GPIO ports:
     def getRange(self):
         # should take .011 secs to travel 4 m, 
         # so wait .03sec as well outside our expected range
+        maxTimeout = 0.03
         # make sure sonic is off, and wait 30 ms for echos to fade
         GPIO.output(self.TRIGGER, 0)
-        time.sleep(0.03)
+        time.sleep(maxTimeout)
         # make a ping
         # set Trigger to HIGH
         GPIO.output(self.TRIGGER, 1)
@@ -271,7 +273,7 @@ Seem to be using the following GPIO ports:
         GPIO.output(self.TRIGGER, 0)
         # save StartTime as soon as ping has gone
         maxTime = (datetime.datetime.now() 
-                   + datetime.timedelta(seconds=self.MAX_TIMEOUT))
+                   + datetime.timedelta(seconds=maxTimeout))
         while ((GPIO.input(self.ECHO) == 0) and 
                (maxTime > datetime.datetime.now())):
             pass  # tight loop
