@@ -58,7 +58,7 @@ Seem to be using the following GPIO ports:
 '''
 
     # Initialisation code
-    def __init__(self, name):
+    def __init__(self, name, controller=None):
         self.MAX_TIMEOUT = 2.0  # seconds
         self.ERROR_VALUE = -100  # to indicate invalid value for most things
         # set GPIO Pins
@@ -70,6 +70,7 @@ Seem to be using the following GPIO ports:
         self.TRIGGER = 26
         self.ECHO = 19
         self.FLOW_SENSOR = 27
+        self.controller=controller
 
         super().__init__(name)
         if (name == "Power") or (name == "PumpP") or (name == "Photo"):
@@ -185,9 +186,9 @@ Seem to be using the following GPIO ports:
             lines = self.read_temp_raw()  # Read the temperature 'device file'
             # Keep re-reading until the first line ends in 'YES'
             # wait for 0.2s between reads - how log could this take? - use MAX_TIMOUT to limit it
-            maxTime = (datetime.datetime.now() 
+            maxTime = (datetime.datetime.now()
                        + datetime.timedelta(seconds=self.MAX_TIMEOUT))
-            while ((lines[0].strip()[-3:] != 'YES') and 
+            while ((lines[0].strip()[-3:] != 'YES') and
                    (maxTime > datetime.datetime.now())):
                 time.sleep(0.2)
                 lines = self.read_temp_raw()
@@ -210,6 +211,12 @@ Seem to be using the following GPIO ports:
             # each click represents 1.7 * 2.25 ml, so convert to litres per minute
             # 1.7 reflects John's impirical testing
             self.value = ((clicks / countTime) * 60 * 1.7 * 2.25 / 1000)
+        elif self.getName() == "SolarP":
+            # calculate the power provided by solar heat based on Flow, Water and Pool temps
+            # the formula is (temp out - temp in) * flow * 60 *4.2 /3600 to get kilowatts
+            # as this is out of date until all values are "read" by the controller,
+            # should re-call it after all values got!
+            self.value = 0
         elif self.getName() == "Depth":
             # as we are unsure of the acuracy (but I think this is overkill:
             # use multiples of 50 to get acceptible results (in range)
@@ -238,7 +245,7 @@ Seem to be using the following GPIO ports:
                     if (localdistance > lowlimit and localdistance < hilimit):
                         sumread += localdistance
                         valid += 1
-                        # print ("localdistance = ", localdistance , "n= ", n, 
+                        # print ("localdistance = ", localdistance , "n= ", n,
                         #        "n1 = ", n1, "valid = ", valid)
                     else:
                         print("Invalid range:", localdistance)
@@ -259,7 +266,7 @@ Seem to be using the following GPIO ports:
         return self.value
 
     def getRange(self):
-        # should take .011 secs to travel 4 m, 
+        # should take .011 secs to travel 4 m,
         # so wait .03sec as well outside our expected range
         maxTimeout = 0.03
         # make sure sonic is off, and wait 30 ms for echos to fade
@@ -272,14 +279,14 @@ Seem to be using the following GPIO ports:
         time.sleep(0.00001)
         GPIO.output(self.TRIGGER, 0)
         # save StartTime as soon as ping has gone
-        maxTime = (datetime.datetime.now() 
+        maxTime = (datetime.datetime.now()
                    + datetime.timedelta(seconds=maxTimeout))
-        while ((GPIO.input(self.ECHO) == 0) and 
+        while ((GPIO.input(self.ECHO) == 0) and
                (maxTime > datetime.datetime.now())):
             pass  # tight loop
         StartTime = time.time()
         # save time of arrival of first echo
-        while ((GPIO.input(self.ECHO) == 1) and 
+        while ((GPIO.input(self.ECHO) == 1) and
                (maxTime > datetime.datetime.now())):
             pass  # tight loop
         StopTime = time.time()

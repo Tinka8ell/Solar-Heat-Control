@@ -17,8 +17,8 @@ class FileBackingStore():
     'This will be the file backing store class for the Solar panel package'
 
     # Initialisation code
-    def __init__(self):
-        self._dir = None
+    def __init__(self, dir=None):
+        self._dir = dir
         self._control = None
         return
 
@@ -35,7 +35,7 @@ class FileBackingStore():
             path = os.path.join(self.getDir(), "Control.json")
             if not os.path.isfile(path):
                 fd = open(path, "w")
-                json.dump({'Period': 60, 'Threshold': 3}, fd)
+                json.dump({'Period': 5, 'Threshold': 3}, fd)
                 fd.close
             self._control = path
         return self._control
@@ -48,7 +48,7 @@ class FileBackingStore():
         if not os.path.isfile(path):
             # not exist, so create it
             fd = open(path, "w")
-            fd.write('{"records": [') # start json with a dummy structure 
+            fd.write('{"records": [') # start json with a dummy structure
             # add timestamp of the file create
             data = {"timestamp": current.strftime("%d/%m/%y %H:%M:%S")}
             json.dump(data, fd)
